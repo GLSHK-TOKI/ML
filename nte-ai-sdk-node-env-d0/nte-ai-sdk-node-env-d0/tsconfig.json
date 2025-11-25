@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "types": ["node"], // avoid @types/chai conflicts
+    "outDir": "dist",
+    "moduleResolution": "nodenext",
+    "removeComments": false,
+    "sourceMap": true,
+    "target": "ES2022",
+    "declaration": true,
+    "strict": true,
+    "noEmit": true,
+    "module": "NodeNext",
+    "noEmitOnError": true,
+    "lib": ["ES2022"],
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "#ai-sdk-node": ["./src/index.ts"],
+      "#ai-sdk-node/*": ["./src/*"],
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ]
+  },
+  "include": ["src/**/*"],
+}

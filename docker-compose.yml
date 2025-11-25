@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # Flask web application
+  flask-app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: knowledge-base-flask
+    ports:
+      - "5000:5000"
+    environment:
+      - CX_POD_ENV=production
+      - LOG_LEVEL=INFO
+      # External Elasticsearch Configuration (set in .env file)
+      - ELASTICSEARCH_HOST=${ELASTICSEARCH_HOST}
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - ACCESS_CONTROL_STORAGE_INDEX=access_control
+      - KNOWLEDGE_BASE_STORE_INDEX_PREFIX=knowledge_base
+      - RATE_LIMIT_STORAGE_INDEX=rate_limit
+      - ALLOW_ORIGINS=http://localhost:3000,http://localhost:8080
+      # Azure OpenAI Configuration (set these in .env file)
+      - OPENAI_AZURE_ENDPOINT_1=${OPENAI_AZURE_ENDPOINT_1}
+      - OPENAI_API_KEY_1=${OPENAI_API_KEY_1}
+      - OPENAI_LLM_AZURE_DEPLOYMENT=${OPENAI_LLM_AZURE_DEPLOYMENT}
+      - OPENAI_LLM_API_VERSION=${OPENAI_LLM_API_VERSION}
+      - OPENAI_EMBEDDING_AZURE_DEPLOYMENT=${OPENAI_EMBEDDING_AZURE_DEPLOYMENT}
+      - OPENAI_EMBEDDING_API_VERSION=${OPENAI_EMBEDDING_API_VERSION}
+      # Azure SharePoint Configuration
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - AZURE_SHAREPOINT_DRIVE_ID=${AZURE_SHAREPOINT_DRIVE_ID}
+    networks:
+      - knowledge-base-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Node.js cron job service
+  cron-job:
+    build:
+      context: .
+      dockerfile: dockerfile-nodejs
+    container_name: knowledge-base-cron
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      # Add your cron job specific environment variables here
+    depends_on:
+      - flask-app
+    networks:
+      - knowledge-base-network
+    restart: unless-stopped
+    # Run as a one-time job - remove this if it's a continuous cron service
+    # command: ["node", "index.js"]
+
+  # Redis for caching and session management (optional)
+  redis:
+    image: redis:7.2-alpine
+    container_name: knowledge-base-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - knowledge-base-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: knowledge-base-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - flask-app
+    networks:
+      - knowledge-base-network
+    restart: unless-stopped
+
+networks:
+  knowledge-base-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local

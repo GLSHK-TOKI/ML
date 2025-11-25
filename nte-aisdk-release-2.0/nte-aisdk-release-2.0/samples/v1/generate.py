@@ -1,0 +1,49 @@
+from nte_aisdk.azure_openai import AzureOpenAIInstanceConfig, AzureOpenAIModelConfig
+from nte_aisdk.dynamic_few_shot import (
+    DynamicFewShotDefaultSearchStrategy,
+    DynamicFewShotExampleFieldMapping,
+    DynamicFewShotExampleStore,
+    DynamicFewShotModel,
+    DynamicFewShotPromptTemplate,
+)
+
+EMBEDDINGS_INSTANCES_CONFIGS = [
+    AzureOpenAIInstanceConfig("<your_azure_endpoint_1>", "<your_api_key_1"),
+    AzureOpenAIInstanceConfig("<your_azure_endpoint_2>", "<your_api_key_2"),
+    AzureOpenAIInstanceConfig("<your_azure_endpoint_3>", "<your_api_key_3")
+]
+LLM_INSTANCES_CONFIGS = [
+    AzureOpenAIInstanceConfig("<your_azure_endpoint_1>", "<your_api_key_1"),
+    AzureOpenAIInstanceConfig("<your_azure_endpoint_2>", "<your_api_key_2"),
+    AzureOpenAIInstanceConfig("<your_azure_endpoint_3>", "<your_api_key_3")
+]
+
+example_store = DynamicFewShotExampleStore(
+    host="<your_elastic_host>",
+    basic_auth=("<your_username>", "<your_password>"),
+    instance_configs=EMBEDDINGS_INSTANCES_CONFIGS,
+    index_prefix="examplestore",
+)
+
+prompt_template = DynamicFewShotPromptTemplate(
+    instruction_text="Instruction: You are an AI categorizer, your task is to tag the comment with the correct label.",
+    field_mapping=DynamicFewShotExampleFieldMapping(
+        input="comment_text",
+        output="label",
+    ),
+)
+model = DynamicFewShotModel(
+    instance_configs=LLM_INSTANCES_CONFIGS,
+    model_config=AzureOpenAIModelConfig(
+        azure_deployment="<your_azure_deployment>",
+        api_version="<your_api_version>",
+    ),
+    prompt_template=prompt_template,
+    example_store=example_store,
+    search_strategy=DynamicFewShotDefaultSearchStrategy(),
+)
+answer = model.generate(
+    environment="live",
+    query="Thank you",
+)
+print(answer)

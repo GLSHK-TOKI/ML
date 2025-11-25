@@ -1,0 +1,12 @@
+{
+  "name": "@com.cathaypacific.teams.nte/ai-sdk-samples",
+  "version": "1.0.0",
+  "description": "Usage examples for NTE AI SDK.",
+  "main": "index.js",
+  "type": "module",
+  "author": "Cathay Pacific Airways Limited",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

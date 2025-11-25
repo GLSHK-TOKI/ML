@@ -1,0 +1,1 @@
+export { KnowledgeBaseStore, KnowledgeBaseStoreOptions } from './store.js';

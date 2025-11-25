@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+
+index_states_suffix='states'
+index_1_suffix='1'
+index_2_suffix='2'
+index_3_suffix='3'
+
+read -p 'Elasticsearch host: ' host
+read -p 'Elasticsearch username: ' username
+read -sp 'Elasticsearch password: ' password
+echo
+read -p 'Elasticsearch index prefix name: ' index_prefix
+read -p 'Embedding model (Azure deployment name): ' embedding_azure_deployment
+read -p 'Embedding model (Azure API version): ' embedding_api_version
+
+index_states="${index_prefix}${index_states_suffix}"
+index_1="${index_prefix}${index_1_suffix}"
+index_2="${index_prefix}${index_2_suffix}"
+index_3="${index_prefix}${index_3_suffix}"
+
+# 1. Test connection to Elasticsearch
+response=$(curl -s -u "${username}:${password}" -XGET "${host}/${index_states}/_search" -H 'Content-Type: application/json' -d '{
+  "query": {
+    "match_all": {}
+  }
+}')
+
+if [[ $response == *"hits"* ]]; then
+  echo "✅ Connected to Elasticsearch, starting initialization..."
+else
+  echo "❌ Error connecting to Elasticsearch"
+  echo "$response"
+  exit 1
+fi
+
+# 2. Initialize the index mapping of all indices
+for index in "$index_1" "$index_2" "$index_3"; do
+  response=$(curl -s -u "${username}:${password}" -XPUT "${host}/${index}/_mapping" -H 'Content-Type: application/json' -d '{
+    "properties": {
+      "last_updated_time": {
+        "type": "date"
+      }
+    }
+  }')
+  
+  if [[ $response == *"acknowledged"* ]]; then
+    echo "✅ Index mapping initialized for ${index}"
+  else
+    echo "❌ Error creating mapping with property 'last_updated_time' for ${index}"
+    echo "$response"
+    exit 1
+  fi
+done
+
+# 3. Initialize the index mapping in the state index
+response=$(curl -s -u "${username}:${password}" -XPUT "${host}/${index_states}/_mapping" -H 'Content-Type: application/json' -d '{
+  "properties": {
+    "live": {
+      "properties": {
+        "index": {
+          "type": "keyword"
+        },
+        "embedding_model": {
+          "properties": {
+            "azure_deployment": {
+              "type": "keyword"
+            },
+            "api_version": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    },
+    "staging": {
+      "properties": {
+        "index": {
+          "type": "keyword"
+        },
+        "embedding_model": {
+          "properties": {
+            "azure_deployment": {
+              "type": "keyword"
+            },
+            "api_version": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    },
+    "inactive": {
+      "properties": {
+        "index": {
+          "type": "keyword"
+        },
+        "embedding_model": {
+          "properties": {
+            "azure_deployment": {
+              "type": "keyword"
+            },
+            "api_version": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}')
+if [[ $response == *"acknowledged"* ]]; then
+  echo "✅ Index mapping initialized for ${index_states}"
+else
+  echo "❌ Error creating mapping for ${index_states}"
+  echo "$response"
+  exit 1
+fi
+
+# 4. Initialize the states document in the state index
+response=$(curl -s -u "${username}:${password}" -XPOST "${host}/${index_states}/_doc/1" -H 'Content-Type: application/json' -d '{
+  "live": {
+    "index": "'"${index_1}"'",
+    "embedding_model": {
+      "azure_deployment": "'"${embedding_azure_deployment}"'",
+      "api_version": "'"${embedding_api_version}"'"
+    }
+  },
+  "staging": {
+    "index": "'"${index_2}"'",
+    "embedding_model": {
+      "azure_deployment": "'"${embedding_azure_deployment}"'",
+      "api_version": "'"${embedding_api_version}"'"
+    }
+  },
+  "inactive": {
+    "index": "'"${index_3}"'",
+    "embedding_model": {
+      "azure_deployment": "'"${embedding_azure_deployment}"'",
+      "api_version": "'"${embedding_api_version}"'"
+    }
+  }
+}')
+
+if [[ $response == *"created"* ]] || [[ $response == *"updated"* ]]; then
+  echo "✅ States document initialized in ${index_states}"
+  echo "🚀 Initialized completed!"
+else
+  echo "❌ Error initializing the states document in state index"
+  echo "$response"
+  exit 1
+fi

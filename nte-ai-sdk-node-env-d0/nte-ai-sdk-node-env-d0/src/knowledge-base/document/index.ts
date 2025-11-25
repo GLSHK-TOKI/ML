@@ -1,0 +1,10 @@
+export { KnowledgeBasePDFDocument } from './pdf-document.js';
+export { KnowledgeBaseWebLink } from './web-link.js';
+export { KnowledgeBaseDocument } from './document.js';
+export { KnowledgeBaseImageDocument } from './image-document.js';
+export { KnowledgeBaseDOCDocument } from './text-document/doc-document.js';
+export { KnowledgeBaseDOCXDocument } from './text-document/docx-document.js';
+export { KnowledgeBaseHTMLDocument } from './text-document/html-document.js';
+export { KnowledgeBaseMDDocument } from './text-document/md-document.js';
+export { KnowledgeBaseRTFDocument } from './text-document/rtf-document.js';
+export { KnowledgeBaseTXTDocument } from './text-document/txt-document.js';

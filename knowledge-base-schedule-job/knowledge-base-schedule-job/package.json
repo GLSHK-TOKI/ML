@@ -1,0 +1,31 @@
+{
+  "name": "cron-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "./node_modules/.bin/nyc --reporter=lcov ./node_modules/.bin/mocha",
+    "start": "node index.js",
+    "lint": "./node_modules/.bin/eslint --ignore-path .gitignore . --ext .js",
+    "lint:fix": "./node_modules/.bin/eslint --ignore-path .gitignore . --ext .js --fix",
+    "prepare:husky": "husky install"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@com.cathaypacific.teams.nte/ai-sdk-node": "^1.1.2",
+    "@sparticuz/chromium": "^123.0.1",
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.3.1",
+    "pino": "^8.17.2"
+  },
+  "devDependencies": {
+    "chai": "^5.0.0",
+    "eslint": "^8.56.0",
+    "husky": "^8.0.3",
+    "mocha": "^10.2.0",
+    "nyc": "^15.1.0",
+    "pino-pretty": "^10.3.1"
+  }
+}
